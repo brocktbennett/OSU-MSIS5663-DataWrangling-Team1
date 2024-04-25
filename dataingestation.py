@@ -2,15 +2,14 @@ import pandas as pd
 import pyodbc
 
 # Set up the database connection
-conn = pyodbc.connect('DRIVER={SQL Server};SERVER=stwssbsql01.ad.okstate.edu;DATABASE=brocben;Trusted_Connection=yes;')
+conn = pyodbc.connect('DRIVER={SQL Server};SERVER=stwssbsql01.ad.okstate.edu;DATABASE=TTeam1;Trusted_Connection=yes;')
 
 # Read CSV files
-vehicle_df = pd.read_csv("Z:\Desktop\Vehicles_extract.csv")
-# accidents_df = pd.read_csv("Z:\Desktop\Accidents_extract.csv")
+vehicle_df = pd.read_csv("C:\\Users\\brocben\Desktop\OneDrive_1_4-25-2024\Vehicles_extract.csv")
+accidents_df = pd.read_csv("C:\\Users\\brocben\Desktop\OneDrive_1_4-25-2024\Accidents_extract.csv")
 
 # Handle missing values in vehicle_df
 vehicle_df.fillna('null', inplace=True)
-
 
 # # Handle missing values in accidents_df
 # accidents_df.fillna('null', inplace=True)
@@ -48,40 +47,41 @@ def handle_insert_error(index, column, value, error):
     if proceed.lower() != 'y':
         exit()  # Exit the script if user chooses not to proceed
 
-# # Insert data into Accident table
-# for index, row in accidents_df.iterrows():
-#     cursor = conn.cursor()
-#     try:
-#         # Attempt to execute the insert query
-#         cursor.execute("""
-#             INSERT INTO Accident (Accident_Index, Road_Class_1, Road_Number_1, Road_Class_2, Road_Number_2, Accident_Severity,
-#                                   Carriageway_Hazards, Date, Day_of_Week, Did_Police_Attend_Scene_of_Accident, Junction_Control,
-#                                   Junction_Detail, Latitude, Light_Conditions, Local_Authority_District, Local_Authority_Highway,
-#                                   Location_Easting_OSGR, Location_Northing_OSGR, Longitude, LSOA_of_Accident_Location,
-#                                   Number_of_Casualties, Number_of_Vehicles, Pedestrian_Crossing_Human_Control,
-#                                   Pedestrian_Crossing_Physical_Facilities, Police_Force, Road_Surface_Conditions, Road_Type,
-#                                   Special_Conditions_at_Site, Speed_limit, Time, Urban_or_Rural_Area, Weather_Conditions, Year,
-#                                   InScotland)
-#             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-#         """, row.values.tolist())
-#         cursor.commit()
-#     except pyodbc.IntegrityError as e:
-#         # If an integrity error occurs due to duplicate key violation, skip the row
-#         print(f"Skipped duplicate row {index + 1}: {e}")
-#         continue
-#     except pyodbc.Error as e:
-#         # If another error occurs, print the error and proceed to the next row
-#         handle_insert_error(index, e)
-#         continue
-#     finally:
-#         cursor.close()
+# Insert data into Accident table
+for index, row in accidents_df.iterrows():
+    cursor = conn.cursor()
+    try:
+        # Attempt to execute the insert query
+        cursor.execute("""
+            INSERT INTO Accident (Accident_Index, Road_Class_1, Road_Number_1, Road_Class_2, Road_Number_2, Accident_Severity,
+                                  Carriageway_Hazards, Date, Day_of_Week, Did_Police_Attend_Scene_of_Accident, Junction_Control,
+                                  Junction_Detail, Latitude, Light_Conditions, Local_Authority_District, Local_Authority_Highway,
+                                  Location_Easting_OSGR, Location_Northing_OSGR, Longitude, LSOA_of_Accident_Location,
+                                  Number_of_Casualties, Number_of_Vehicles, Pedestrian_Crossing_Human_Control,
+                                  Pedestrian_Crossing_Physical_Facilities, Police_Force, Road_Surface_Conditions, Road_Type,
+                                  Special_Conditions_at_Site, Speed_limit, Time, Urban_or_Rural_Area, Weather_Conditions, Year,
+                                  InScotland)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, tuple(row.astype(str).values))  # Convert all values to string to ensure correct formatting
+        conn.commit()
+    except pyodbc.IntegrityError as e:
+        print(f"Skipped duplicate row {index + 1}: {e}")
+        continue
+    except pyodbc.Error as e:
+        handle_insert_error(index, 'unknown_column', row.values.tolist(), e)
+        continue
+    finally:
+        cursor.close()
+
+# Function to handle errors during insertion
 def handle_insert_error(index, column, value, error):
     print(f"Error occurred while inserting row {index + 1}, column '{column}': {error}")
     print("Problematic value:", value)
-    # You can handle the error here, e.g., logging, skipping the row, etc.
     proceed = input("Do you want to proceed? (y/n): ")
     if proceed.lower() != 'y':
-        exit()  # Exit the script if the user chooses not to proceed
+        exit()  # Exit the script if user chooses not to proceed
+
+# Note: Ensure that you are using the correct datatypes and handling NaN or None values correctly before attempting to insert into the database.
 
 # Insert data into Vehicle table
 for index, row in vehicle_df.iterrows():
